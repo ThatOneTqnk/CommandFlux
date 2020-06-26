@@ -1,6 +1,9 @@
 package me.tqnk.flux;
 
 import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.FloatArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -8,9 +11,9 @@ import com.mojang.brigadier.tree.CommandNode;
 
 import me.tqnk.flux.annotation.FluxHandle;
 import me.tqnk.flux.arguments.ArgumentMap;
+import me.tqnk.flux.arguments.FluxLiteral;
 import me.tqnk.flux.command.CommandSchema;
 import me.tqnk.flux.context.FluxCommandWrapper;
-import me.tqnk.flux.exception.DispatcherNotFoundException;
 import net.minecraft.server.v1_15_R1.CommandDispatcher;
 import net.minecraft.server.v1_15_R1.CommandListenerWrapper;
 import org.bukkit.Bukkit;
@@ -18,9 +21,11 @@ import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.craftbukkit.v1_15_R1.CraftServer;
 import org.bukkit.entity.Player;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,26 +33,23 @@ import java.util.List;
  * Created by MSH on 3/25/2020
  */
 public class CommandFlux {
-    private static CommandFlux instance;
+    private final String prefix;
     private SimpleCommandMap commandMap;
     private CommandDispatcher cloneDispatcher = new CommandDispatcher();
     private com.mojang.brigadier.CommandDispatcher<CommandListenerWrapper> bDispatcher;
     private ArgumentMap fluxArgumentMap = new ArgumentMap(); 
 
-    private CommandFlux() {
-
+    public CommandFlux(String prefix) {
+        this.prefix = prefix == null ? "flux" : prefix;
         this.bDispatcher = cloneDispatcher.a();
         this.commandMap = ((CraftServer) Bukkit.getServer()).getCommandMap();
 
         this.fluxArgumentMap.addEntry(Boolean.class, () -> BoolArgumentType.bool());
         this.fluxArgumentMap.addEntry(String.class, () -> StringArgumentType.word());
+        this.fluxArgumentMap.addEntry(Float.class, () -> FloatArgumentType.floatArg());
+        this.fluxArgumentMap.addEntry(Integer.class, () -> IntegerArgumentType.integer());
+        this.fluxArgumentMap.addEntry(Long.class, () -> LongArgumentType.longArg());
 
-
-    }
-
-    public static CommandFlux get() {
-        if (instance == null) instance = new CommandFlux();
-        return instance;
     }
 
     public <T> void registerCommands(Class<T> commandClazz) {
@@ -86,13 +88,16 @@ public class CommandFlux {
 
             int skipParams = 1;
             int paramCounter = 0;
+            final Parameter[] paramz = cmdSchema.getCmdCallback().getParameters();
             for (Class<?> paramType : cmdSchema.getCmdCallback().getParameterTypes()) {
                 if (skipParams > 0) {
                     skipParams--;
                     continue;
                 }
+                Parameter param = paramz[paramCounter + 1];
+
                 String paramName = paramNames[paramCounter];
-                ArgumentBuilder<CommandListenerWrapper, ?> argBuilder = fluxArgumentMap.generateNode(paramType, paramName);
+                ArgumentBuilder<CommandListenerWrapper, ?> argBuilder = fluxArgumentMap.generateNode(param, paramType, paramName);
                 builders.add(argBuilder);
 
                 paramCounter++;
@@ -133,7 +138,7 @@ public class CommandFlux {
                 startNode = startNode.then(mappedBuilders.get(0));
             } 
 
-            String namespace = "flux";
+            String namespace = this.prefix;
             CommandNode<CommandListenerWrapper> rootCmdNode = bDispatcher.register(startNode);
 
             String[] aliases = cmdSchema.getCommandInfo().aliases();
@@ -142,8 +147,12 @@ public class CommandFlux {
                 this.commandMap.register(namespace, new FluxCommandWrapper(cmdSchema.getCommandInfo(), cloneDispatcher, aliasCmdNode));
             }
 
-            this.commandMap.register("flux", new FluxCommandWrapper(cmdSchema.getCommandInfo(), cloneDispatcher, rootCmdNode));
+            this.commandMap.register(namespace, new FluxCommandWrapper(cmdSchema.getCommandInfo(), cloneDispatcher, rootCmdNode));
         }
+    }
+
+    public void addLiteral(Class<?> paramClass, FluxLiteral literalProvider) {
+        this.fluxArgumentMap.addLiteral(paramClass, literalProvider);
     }
     
     private ArgumentBuilder<CommandListenerWrapper, ?> setDispatcher(CommandSchema schema, 
@@ -156,7 +165,12 @@ public class CommandFlux {
             for (int x = 0; x <= upTo; x++) {
                 String paramName = paramNames[x];
                 Class<?> paramType = paramTypes[x + 1]; 
-                dynamicParameters[x + 1] = nativeCmdCtx.getArgument(paramName, paramType);
+                FluxLiteral fluxLiteral = this.fluxArgumentMap.getMappedLiteral(paramType);
+                if (fluxLiteral != null) {
+                    dynamicParameters[x + 1] = fluxLiteral.toValue(nativeCmdCtx.getArgument(paramName, String.class));
+                } else {
+                    dynamicParameters[x + 1] = nativeCmdCtx.getArgument(paramName, paramType);
+                }
             }
             try {
                 return (boolean) cmdMethod.invoke(null, dynamicParameters) ? 1 : 0;

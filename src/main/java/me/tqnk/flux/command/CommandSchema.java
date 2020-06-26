@@ -13,7 +13,12 @@ public class CommandSchema {
 
     public CommandSchema(FluxHandle commandInfo, Method cmdCallback) {
         Class<?>[] params = cmdCallback.getParameterTypes();
-        assert commandInfo.paramNames().length == params.length - 1 && commandInfo.aliases().length > 0;
+        if (!(commandInfo.paramNames().length == params.length - 1)) {
+            System.out.println("Method " + cmdCallback.getName() + " seems to have an unbalanced amount of parameters");
+        }
+        if (commandInfo.aliases().length == 0) {
+            System.out.println("Method " + cmdCallback.getName() + " has no aliases!");
+        }
         this.commandInfo = commandInfo;
         this.cmdCallback = cmdCallback;
     }
