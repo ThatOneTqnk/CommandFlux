@@ -23,7 +23,7 @@ public final class FluxCommandWrapper extends BukkitCommand {
     public final CommandNode<CommandListenerWrapper> fluxCmd;
 
     public FluxCommandWrapper(FluxHandle handle, CommandDispatcher dispatcher, CommandNode<CommandListenerWrapper> fluxCmd) {
-        super(fluxCmd.getName(), "A flux command.", fluxCmd.getUsageText(), Collections.EMPTY_LIST);
+        super(fluxCmd.getName(), handle.description().isEmpty() ? "A bukkit command." : handle.description(), fluxCmd.getUsageText(), Collections.EMPTY_LIST);
         this.handle = handle;
         this.dispatcher = dispatcher;
         this.fluxCmd = fluxCmd;

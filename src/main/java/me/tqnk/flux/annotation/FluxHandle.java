@@ -14,6 +14,7 @@ public @interface FluxHandle {
     String[] aliases();
     String[] paramNames() default {};
     String permission() default "";
+    String description() default "";
     int min() default 0;
     boolean op() default false;
 }

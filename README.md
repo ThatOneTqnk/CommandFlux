@@ -1,6 +1,6 @@
 # CommandFlux
 
-A simple framework for making elegant commands for Bukkit.
+A simple framework to make Brigaider commands for Bukkit.
 
 Main class
 ```java
@@ -9,7 +9,9 @@ public class EpicPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        flux = new CommandFlux("epic"); // epic would be the prefix of the command
+        flux = new CommandFlux(this, "epic"); // epic would be the fallback prefix of the command
+
+        // This tells flux how to deal with ExampleTeam
         flux.addLiteral(ExampleTeam.class, new FluxLiteral<ExampleTeam>() { 
             public List<String> getChoices() {
                 return ExampleTeam.TEAMS.stream().map((team) -> team.name).collect(Collectors.toList());
@@ -19,6 +21,7 @@ public class EpicPlugin extends JavaPlugin {
                 return ExampleTeam.findTeam(choice);
             }
         });
+
         flux.registerCommands(ExampleCommands.class);
     }
 }
@@ -34,10 +37,16 @@ public class ExampleCommands {
         return true;
     }
 
+    @FluxHandle(aliases = {"fluxtest"}, paramNames = {"range", "message"}, min = 1)
+    public static boolean shout(CommandSender sender, @LongRange(minBound = 1L, maxBound = 2L) Long selection, @Greedy String message) {
+        Bukkit.broadcastMessage("Long is " + selection + " and message is " + message);
+        return true;
+    }
+
 }
 ```
 
-Example of a simple argument type (FluxLiteral):
+Custom Type definition:
 
 ExampleTeam
 ```java

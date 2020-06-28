@@ -1,5 +1,6 @@
 package me.tqnk.flux;
 
+import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -14,14 +15,19 @@ import me.tqnk.flux.arguments.ArgumentMap;
 import me.tqnk.flux.arguments.FluxLiteral;
 import me.tqnk.flux.command.CommandSchema;
 import me.tqnk.flux.context.FluxCommandWrapper;
+import me.tqnk.flux.listener.CommandSendListener;
+import net.minecraft.server.v1_15_R1.ArgumentRegistry;
+import net.minecraft.server.v1_15_R1.ArgumentSerializerVoid;
 import net.minecraft.server.v1_15_R1.CommandDispatcher;
 import net.minecraft.server.v1_15_R1.CommandListenerWrapper;
 import org.bukkit.Bukkit;
 import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.craftbukkit.v1_15_R1.CraftServer;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.annotation.Annotation;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -33,13 +39,17 @@ import java.util.List;
  * Created by MSH on 3/25/2020
  */
 public class CommandFlux {
+    private WeakReference<JavaPlugin> plugin;
     private final String prefix;
     private SimpleCommandMap commandMap;
     private CommandDispatcher cloneDispatcher = new CommandDispatcher();
     private com.mojang.brigadier.CommandDispatcher<CommandListenerWrapper> bDispatcher;
     private ArgumentMap fluxArgumentMap = new ArgumentMap(); 
+    private CommandSendListener commandSendListener;
 
-    public CommandFlux(String prefix) {
+    public CommandFlux(JavaPlugin plugin, String prefix) {
+        this.plugin = new WeakReference<>(plugin);
+
         this.prefix = prefix == null ? "flux" : prefix;
         this.bDispatcher = cloneDispatcher.a();
         this.commandMap = ((CraftServer) Bukkit.getServer()).getCommandMap();
@@ -50,7 +60,9 @@ public class CommandFlux {
         this.fluxArgumentMap.addEntry(Integer.class, () -> IntegerArgumentType.integer());
         this.fluxArgumentMap.addEntry(Long.class, () -> LongArgumentType.longArg());
 
+        this.commandSendListener = new CommandSendListener(plugin, this.cloneDispatcher, prefix);
     }
+
 
     public <T> void registerCommands(Class<T> commandClazz) {
         List<CommandSchema> cmdSchemas = new ArrayList<>();
@@ -139,22 +151,30 @@ public class CommandFlux {
             } 
 
             String namespace = this.prefix;
+            CommandDispatcher vanillaDispatcher = ((CraftServer) Bukkit.getServer()).getServer().vanillaCommandDispatcher;
             CommandNode<CommandListenerWrapper> rootCmdNode = bDispatcher.register(startNode);
+            CommandNode<CommandListenerWrapper> fallbackRootCmdNode = bDispatcher.register(
+                LiteralArgumentBuilder.<CommandListenerWrapper>literal(this.prefix + ":" + cmdSchema.getCommandInfo().aliases()[0]).redirect(rootCmdNode)
+            );
 
             String[] aliases = cmdSchema.getCommandInfo().aliases();
             for (int aliasC = 1; aliasC < aliases.length; aliasC++) {
                 CommandNode<CommandListenerWrapper> aliasCmdNode = bDispatcher.register(LiteralArgumentBuilder.<CommandListenerWrapper>literal(aliases[aliasC]).redirect(rootCmdNode));
+                CommandNode<CommandListenerWrapper> fallbackAliasCmdNode = 
+                    bDispatcher.register(LiteralArgumentBuilder.<CommandListenerWrapper>literal(this.prefix + ":" + aliases[aliasC]).redirect(rootCmdNode));
                 this.commandMap.register(namespace, new FluxCommandWrapper(cmdSchema.getCommandInfo(), cloneDispatcher, aliasCmdNode));
+                this.commandMap.register(namespace, new FluxCommandWrapper(cmdSchema.getCommandInfo(), cloneDispatcher, fallbackAliasCmdNode));
             }
 
             this.commandMap.register(namespace, new FluxCommandWrapper(cmdSchema.getCommandInfo(), cloneDispatcher, rootCmdNode));
+            this.commandMap.register(namespace, new FluxCommandWrapper(cmdSchema.getCommandInfo(), cloneDispatcher, fallbackRootCmdNode));
         }
     }
 
     public void addLiteral(Class<?> paramClass, FluxLiteral literalProvider) {
         this.fluxArgumentMap.addLiteral(paramClass, literalProvider);
     }
-    
+
     private ArgumentBuilder<CommandListenerWrapper, ?> setDispatcher(CommandSchema schema, 
             ArgumentBuilder<CommandListenerWrapper, ?> builder, String[] paramNames, int upTo) {
         Class<?>[] paramTypes = schema.getCmdCallback().getParameterTypes();

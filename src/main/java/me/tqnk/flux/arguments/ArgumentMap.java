@@ -22,7 +22,7 @@ import net.minecraft.server.v1_15_R1.CommandListenerWrapper;
 import net.minecraft.server.v1_15_R1.ICompletionProvider;
 
 public class ArgumentMap {
-    private Map<Class<?>, FluxLiteral> fluxLiterals = new HashMap<>(); 
+	private Map<Class<?>, FluxLiteral> fluxLiterals = new HashMap<>();
     private Map<Class<?>, Supplier<ArgumentType>> argumentTypeProviderMap = new HashMap<>();
 
     public void addEntry(Class<?> clazz, Supplier<ArgumentType> argSupplier) {
@@ -43,7 +43,7 @@ public class ArgumentMap {
     }
 
     public ArgumentBuilder<CommandListenerWrapper, ?> generateNode(Parameter relevantParameter, Class<?> clazz, String paramName) {
-        FluxLiteral literalResult = fluxLiterals.getOrDefault(clazz, null);
+		FluxLiteral literalResult = fluxLiterals.getOrDefault(clazz, null);
         if (literalResult != null) {
             RequiredArgumentBuilder<CommandListenerWrapper, ?> epicBuilder = RequiredArgumentBuilder.argument(paramName, StringArgumentType.word());
             epicBuilder = epicBuilder.suggests((cmdctx, suggestionbuilder) -> {
@@ -53,7 +53,9 @@ public class ArgumentMap {
         }
 
         ArgumentType argType = this.preprocess(relevantParameter, clazz);
-        if (argType == null) return null;
+        if (argType == null) {
+            return null;
+        }
         return RequiredArgumentBuilder.argument(paramName, argType);
     }
 
