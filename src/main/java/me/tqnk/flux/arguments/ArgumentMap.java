@@ -18,8 +18,8 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import me.tqnk.flux.annotation.Greedy;
 import me.tqnk.flux.annotation.LongRange;
 import me.tqnk.flux.annotation.Quoted;
-import net.minecraft.server.v1_15_R1.CommandListenerWrapper;
-import net.minecraft.server.v1_15_R1.ICompletionProvider;
+import net.minecraft.server.v1_16_R1.CommandListenerWrapper;
+import net.minecraft.server.v1_16_R1.ICompletionProvider;
 
 public class ArgumentMap {
 	private Map<Class<?>, FluxLiteral> fluxLiterals = new HashMap<>();

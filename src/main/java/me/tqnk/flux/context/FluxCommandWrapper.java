@@ -10,11 +10,11 @@ import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.defaults.BukkitCommand;
-import org.bukkit.craftbukkit.v1_15_R1.command.VanillaCommandWrapper;
+import org.bukkit.craftbukkit.v1_16_R1.command.VanillaCommandWrapper;
 
 import me.tqnk.flux.annotation.FluxHandle;
-import net.minecraft.server.v1_15_R1.CommandDispatcher;
-import net.minecraft.server.v1_15_R1.CommandListenerWrapper;
+import net.minecraft.server.v1_16_R1.CommandDispatcher;
+import net.minecraft.server.v1_16_R1.CommandListenerWrapper;
 
 public final class FluxCommandWrapper extends BukkitCommand {
 

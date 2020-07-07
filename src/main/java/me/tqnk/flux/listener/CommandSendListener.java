@@ -12,8 +12,8 @@ import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.RootCommandNode;
 
 import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_15_R1.CraftServer;
-import org.bukkit.craftbukkit.v1_15_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_16_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_16_R1.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -22,12 +22,12 @@ import org.bukkit.event.player.PlayerCommandSendEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import me.tqnk.flux.util.ReflectionUtil;
-import net.minecraft.server.v1_15_R1.CommandDispatcher;
-import net.minecraft.server.v1_15_R1.CommandListenerWrapper;
-import net.minecraft.server.v1_15_R1.EntityPlayer;
-import net.minecraft.server.v1_15_R1.ICompletionProvider;
-import net.minecraft.server.v1_15_R1.PacketPlayOutCommands;
-import net.minecraft.server.v1_15_R1.PlayerConnection;
+import net.minecraft.server.v1_16_R1.CommandDispatcher;
+import net.minecraft.server.v1_16_R1.CommandListenerWrapper;
+import net.minecraft.server.v1_16_R1.EntityPlayer;
+import net.minecraft.server.v1_16_R1.ICompletionProvider;
+import net.minecraft.server.v1_16_R1.PacketPlayOutCommands;
+import net.minecraft.server.v1_16_R1.PlayerConnection;
 
 public class CommandSendListener implements Listener {
     private WeakReference<JavaPlugin> plugin;
@@ -49,7 +49,7 @@ public class CommandSendListener implements Listener {
 
     private void syncCommands() {
         CommandDispatcher vanillaDispatcher = ((CraftServer) Bukkit.getServer()).getServer().vanillaCommandDispatcher;
-        CommandDispatcher bukkitDispatcher = ((CraftServer) Bukkit.getServer()).getServer().commandDispatcher;
+        CommandDispatcher bukkitDispatcher = ((CraftServer) Bukkit.getServer()).getServer().dataPackResources.commandDispatcher;
         for (Player player : Bukkit.getOnlinePlayers()) {
             Map<CommandNode<CommandListenerWrapper>, CommandNode<ICompletionProvider>> map = Maps.newIdentityHashMap();
             RootCommandNode vanillaRoot = new RootCommandNode();
