@@ -56,4 +56,12 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub ThatOneTqnk Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/ThatOneTqnk/CommandFlux</url>
+        </repository>
+    </distributionManagement>
 </project>
