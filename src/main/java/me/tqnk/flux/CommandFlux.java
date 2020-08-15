@@ -131,7 +131,6 @@ public class CommandFlux {
                 ArgumentBuilder<CommandListenerWrapper, ?> parentBuilder = mappedBuilders.get(x - 2);
                 parentBuilder.then(childBuilder);
             }
-            System.out.println("Registering " + cmdSchema.getCommandInfo().aliases()[0]);
 
             if (minArgs == 0) {
                 startNode = startNode.executes((nativeCmdCtx) -> {
